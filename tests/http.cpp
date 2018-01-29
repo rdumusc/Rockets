@@ -269,11 +269,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(issue157, F, Fixtures, F)
     bool running = true;
     std::thread thread;
 
-    if(F::server.getThreadCount() == 0)
+    if (F::server.getThreadCount() == 0)
     {
         thread = std::thread([&]() {
-        while (running)
-            F::server.process(100);
+            while (running)
+                F::server.process(100);
         });
     }
 
@@ -285,8 +285,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(issue157, F, Fixtures, F)
     }
 
     running = false;
-    if(F::server.getThreadCount() == 0)
+    if (F::server.getThreadCount() == 0)
         thread.join();
+}
+
+BOOST_AUTO_TEST_CASE(no_process_with_service_threads)
+{
+    Server server{1u};
+    BOOST_CHECK_THROW(server.process(100), std::logic_error);
 }
 
 #if CLIENT_SUPPORTS_REQ_PAYLOAD
