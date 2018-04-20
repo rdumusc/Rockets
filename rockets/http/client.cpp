@@ -29,6 +29,8 @@
 
 #include <libwebsockets.h>
 
+#include "../debug.h"
+
 namespace
 {
 #if LWS_LIBRARY_VERSION_NUMBER < 2001000
@@ -185,6 +187,45 @@ void Client::_process(const int timeout_ms)
 static int callback_http(lws* wsi, lws_callback_reasons reason, void* /*user*/,
                          void* in, const size_t len)
 {
+    static size_t counter = 0;
+    if (reason == LWS_CALLBACK_GET_THREAD_ID)
+    {
+        ++counter;
+    }
+    else
+    {
+        if (counter > 100)
+            std::cerr << "--- BREAK"
+                      << " (service loops: " << counter << ") ---" << std::endl;
+        counter = 0;
+    }
+
+    //    static size_t counter = 0;
+    //    if (reason == LWS_CALLBACK_GET_THREAD_ID)
+    //    {
+    //        ++counter;
+    //        if (counter > 100)
+    //        {
+    //            ++counter;
+    //            --counter;
+    //        }
+    //    }
+    //    else if (counter)
+    //    {
+    //        std::cerr << "Client: " << "LWS_CALLBACK_GET_THREAD_ID" << " (" <<
+    //        counter << ")" << std::endl;
+    //        counter = 0;
+    //        std::cerr << "Client: " << rockets::to_string(reason) <<
+    //        std::endl;
+    //    }
+    //    else
+    //    {
+    //        //std::cerr << "Client allowance = "<<
+    //        lws_get_peer_write_allowance(wsi) <<std::endl;
+    //        std::cerr << "Client: " << rockets::to_string(reason) <<
+    //        std::endl;
+    //    }
+
     // Protocol may be null during the initial callbacks
     if (auto protocol = lws_get_protocol(wsi))
     {

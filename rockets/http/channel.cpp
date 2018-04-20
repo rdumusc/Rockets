@@ -22,6 +22,8 @@
 #include "response.h"
 #include "utils.h"
 
+#include <iostream>
+
 namespace rockets
 {
 namespace http
@@ -173,11 +175,15 @@ int Channel::write(const Response& response,
     if (lws_finalize_http_header(wsi, &p, end))
         return 1;
 
-    lws_write(wsi, start, p - start, LWS_WRITE_HTTP_HEADERS);
-
-    _write(response.body, LWS_WRITE_HTTP_FINAL);
+    if (!_write(start, p - start, LWS_WRITE_HTTP_HEADERS) ||
+        !_write(response.body, LWS_WRITE_HTTP_FINAL))
+    {
+        return -1;
+    }
 
     // Close and free connection if complete, else keep open
+    std::cerr << "status: " << lws_http_transaction_completed(wsi) << std::endl;
+    // return -1;
     return lws_http_transaction_completed(wsi) ? -1 : 0;
 }
 
@@ -262,7 +268,13 @@ bool Channel::_write(const std::string& message, lws_write_protocol protocol)
     auto buffer = std::string(LWS_PRE, '\0');
     buffer.append(message);
     auto data = (unsigned char*)(&buffer.data()[LWS_PRE]);
-    return lws_write(wsi, data, message.size(), protocol) >= 0;
+    return _write(data, message.size(), protocol);
+}
+
+bool Channel::_write(unsigned char* data, const size_t size,
+                     const lws_write_protocol protocol)
+{
+    return lws_write(wsi, data, size, protocol) >= 0;
 }
 }
 }

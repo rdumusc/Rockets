@@ -30,7 +30,7 @@ namespace
 {
 const std::string proxyError = "ERROR proxy: HTTP/1.1 503 \n";
 
-void handleErrorMessage(int, const char* message)
+void handleErrorMessage(int level, const char* message)
 {
 #if PROXY_CONNECTION_ERROR_THROWS
     if (message == proxyError)
@@ -39,13 +39,19 @@ void handleErrorMessage(int, const char* message)
 
 #ifdef NDEBUG
     (void)message;
+    (void)level;
 #else
-    std::cerr << "rockets: lws_err: " << message << std::endl;
+    std::cerr << level << " " << message << std::flush;
 #endif
 }
 struct LogInitializer
 {
-    LogInitializer() { lws_set_log_level(LLL_ERR, handleErrorMessage); }
+    LogInitializer()
+    {
+        lws_set_log_level(
+            /*LLL_ERR | LLL_WARN|LLL_NOTICE|*/ LLL_INFO /*|LLL_DEBUG|LLL_CLIENT*/,
+            handleErrorMessage);
+    }
 };
 static LogInitializer silencer;
 }

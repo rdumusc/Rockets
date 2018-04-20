@@ -39,6 +39,8 @@
 #include <sstream>
 #include <vector>
 
+#include "debug.h"
+
 namespace
 {
 const std::string REQUEST_REGISTRY = "registry";
@@ -232,6 +234,32 @@ void Server::_process(const int timeout_ms)
 static int callback_http(lws* wsi, const lws_callback_reasons reason,
                          void* /*user*/, void* in, const size_t len)
 {
+    //    static size_t counter = 0;
+    //    if (reason == LWS_CALLBACK_GET_THREAD_ID)
+    //    {
+    //        ++counter;
+
+    //        if (counter > 100)
+    //        {
+    //            ++counter;
+    //            --counter;
+    //        }
+    //    }
+    //    else if (counter)
+    //    {
+    //        std::cerr << "Server: " << "LWS_CALLBACK_GET_THREAD_ID" << " (" <<
+    //        counter << ")" << std::endl;
+    //        counter = 0;
+    //        std::cerr << "Server: " << rockets::to_string(reason) <<
+    //        std::endl;
+    //    }
+    //    else
+    //    {
+    //        //std::cerr << "Server allowance = "<<
+    //        lws_get_peer_write_allowance(wsi) <<std::endl;
+    //        std::cerr << "Server: " << rockets::to_string(reason) <<
+    //        std::endl;
+    //    }
     // Protocol may be null during the initial callbacks
     if (auto protocol = lws_get_protocol(wsi))
     {
