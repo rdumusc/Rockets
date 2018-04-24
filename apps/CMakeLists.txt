@@ -29,3 +29,7 @@ endif()
 set(ROCKETS-SERVER_SOURCES server.cpp)
 set(ROCKETS-SERVER_LINK_LIBRARIES Rockets)
 common_application(rockets-server)
+
+set(MINIMAL-TEST_SOURCES minimal-test.cpp)
+set(MINIMAL-TEST_LINK_LIBRARIES PRIVATE websockets)
+common_application(minimal-test)
