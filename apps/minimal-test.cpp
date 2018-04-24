@@ -9,12 +9,42 @@ const char *htmlPage{
     <head>
         <meta charset="UTF-8">
         <title>Minimal Page</title>
+    <script>
+        function getImage(targetImg)
+        {
+            var req = new XMLHttpRequest();
+            req.onreadystatechange = function() {
+                if (req.readyState == 4 && req.status == 200) {
+                    document.getElementById(targetImg).src = req.responseText;
+                }
+            }
+            req.open("GET", "img.png", true); // true for asynchronous
+            req.send(null);
+        }
+        function getImages()
+        {
+            getImage("pngImg1");
+            getImage("pngImg2");
+            getImage("pngImg3");
+        }
+    </script>
     </head>
-    <body>
+    <body onload="getImages()">
         <h1>Minimal Page</h1>
+        <img id="pngImg1" />
+        <img id="pngImg2" />
+        <img id="pngImg3" />
     </body>
 </html>
 )HTMLCONTENT"};
+
+const char *pngImage =
+    "data:image/"
+    "png;base64,"
+    "iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAnUlEQVR42u3RAQ0AAAgDIG1m/"
+    "1K3hnNQgZ5KijNaiBCECEGIEIQIQYgQIUIQIgQhQhAiBCFCEIIQIQgRghAhCBGCEIQIQYgQhAh"
+    "BiBCEIEQIQoQgRAhChCAEIUIQIgQhQhAiBCEIEYIQIQgRghAhCEGIEIQIQYgQhAhBCEKEIEQIQ"
+    "oQgRAhCECIEIUIQIgQhQhAiRIgQhAhBiBCEfLc/reCdqegczgAAAABJRU5ErkJggg==";
 
 static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
                          void *user, void *in, size_t len)
@@ -34,45 +64,88 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
             /* not a GET */
             break;
 
-        if (strcmp((const char *)in, "/"))
-            /* not our URL, break to return 404 */
-            break;
+        if (!strcmp((const char *)in, "/"))
+        {
+            /* Write headers */
+            if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
+                return 1;
 
-        /* Write headers */
-        if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
-            return 1;
+            if (lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE,
+                                             (unsigned char *)"text/html", 9,
+                                             &p, end))
+                return 1;
 
-        if (lws_add_http_header_by_token(wsi, WSI_TOKEN_HTTP_CONTENT_TYPE,
-                                         (unsigned char *)"text/html", 9, &p,
-                                         end))
-            return 1;
+            if (lws_add_http_header_content_length(wsi, strlen(htmlPage), &p,
+                                                   end))
+                return 1;
 
-        if (lws_add_http_header_content_length(wsi, strlen(htmlPage), &p, end))
-            return 1;
+            if (lws_finalize_http_header(wsi, &p, end))
+                return -1;
 
-        if (lws_finalize_http_header(wsi, &p, end))
-            return -1;
+            const int n =
+                lws_write(wsi, start, p - start,
+                          LWS_WRITE_HTTP_HEADERS /*| LWS_WRITE_H2_STREAM_END*/);
+            if (n < 0)
+                return -1;
 
-        const int n =
-            lws_write(wsi, start, p - start,
-                      LWS_WRITE_HTTP_HEADERS /*| LWS_WRITE_H2_STREAM_END*/);
-        if (n < 0)
-            return -1;
+            lws_callback_on_writable(wsi);
+            return 0;
+        }
+        else if (!strcmp((const char *)in, "/img.png"))
+        {
+            /* Write headers */
+            if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
+                return 1;
 
-        lws_callback_on_writable(wsi);
-        return 0;
+            if (lws_add_http_header_by_token(
+                    wsi, WSI_TOKEN_HTTP_CONTENT_TYPE,
+                    (unsigned char *)"application/base64", 18, &p, end))
+                return 1;
+
+            if (lws_add_http_header_content_length(wsi, strlen(pngImage), &p,
+                                                   end))
+                return 1;
+
+            if (lws_finalize_http_header(wsi, &p, end))
+                return -1;
+
+            const int n =
+                lws_write(wsi, start, p - start,
+                          LWS_WRITE_HTTP_HEADERS /*| LWS_WRITE_H2_STREAM_END*/);
+            if (n < 0)
+                return -1;
+
+            /* Tell writable callback to send image. */
+            static_cast<int *>(user)[0] = 1;
+
+            lws_callback_on_writable(wsi);
+            return 0;
+        }
+        /* not our URL, let lws_callback_http_dummy() return 404 */
     }
     break;
 
     case LWS_CALLBACK_HTTP_WRITEABLE:
     {
-        uint8_t buffer[LWS_PRE + 4096];
+        uint8_t buffer[LWS_PRE + 8192];
         uint8_t *start = &buffer[LWS_PRE];
-        memcpy(start, htmlPage, strlen(htmlPage));
+        size_t length = 0;
+
+        if (static_cast<int *>(user)[0] == 1)
+        {
+            /* return png image */
+            length = strlen(pngImage);
+            memcpy(start, pngImage, length);
+        }
+        else
+        {
+            /* return html page */
+            length = strlen(htmlPage);
+            memcpy(start, htmlPage, strlen(htmlPage));
+        }
 
         /* Write body */
-        const int n =
-            lws_write(wsi, start, strlen(htmlPage), LWS_WRITE_HTTP);
+        const int n = lws_write(wsi, start, length, LWS_WRITE_HTTP);
         if (n < 0)
         {
             lwsl_err("write failed\n");
@@ -81,6 +154,7 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
         }
         if (lws_http_transaction_completed(wsi))
             return -1;
+        return 0;
     }
     break;
 
@@ -92,7 +166,7 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
 }
 
 static struct lws_protocols protocols[] = {
-    {"http", callback_http, 0, 0, 0, 0, 0},
+    {"http", callback_http, 4, 0, 0, 0, 0},
     {NULL, NULL, 0, 0, 0, 0, 0} /* terminator */
 };
 
