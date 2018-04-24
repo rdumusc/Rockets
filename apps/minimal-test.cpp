@@ -10,7 +10,7 @@ const char *htmlPage{
         <meta charset="UTF-8">
         <title>Minimal Page</title>
     <script>
-        function getImage(targetImg)
+        function getImage(targetImg, sourceUrl)
         {
             var req = new XMLHttpRequest();
             req.onreadystatechange = function() {
@@ -18,14 +18,17 @@ const char *htmlPage{
                     document.getElementById(targetImg).src = req.responseText;
                 }
             }
-            req.open("GET", "img.png", true); // true for asynchronous
+            req.open("GET", sourceUrl, true); // true for asynchronous
             req.send(null);
         }
         function getImages()
         {
-            getImage("pngImg1");
-            getImage("pngImg2");
-            getImage("pngImg3");
+            getImage("pngImg1", "img1.png");
+            getImage("pngImg2", "img2.png");
+            getImage("pngImg3", "img3.png");
+            getImage("pngImg4", "img1.png");
+            getImage("pngImg5", "img2.png");
+            getImage("pngImg6", "img3.png");
         }
     </script>
     </head>
@@ -34,17 +37,46 @@ const char *htmlPage{
         <img id="pngImg1" />
         <img id="pngImg2" />
         <img id="pngImg3" />
+        <img id="pngImg4" />
+        <img id="pngImg5" />
+        <img id="pngImg6" />
     </body>
 </html>
 )HTMLCONTENT"};
 
-const char *pngImage =
+const char *pngImageBlue =
     "data:image/"
     "png;base64,"
     "iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAnUlEQVR42u3RAQ0AAAgDIG1m/"
     "1K3hnNQgZ5KijNaiBCECEGIEIQIQYgQIUIQIgQhQhAiBCFCEIIQIQgRghAhCBGCEIQIQYgQhAh"
     "BiBCEIEQIQoQgRAhChCAEIUIQIgQhQhAiBCEIEYIQIQgRghAhCEGIEIQIQYgQhAhBCEKEIEQIQ"
     "oQgRAhCECIEIUIQIgQhQhAiRIgQhAhBiBCEfLc/reCdqegczgAAAABJRU5ErkJggg==";
+
+const char *pngImageGreen =
+    "data:image/"
+    "png;base64,"
+    "iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAnUlEQVR42u3RAQ0AAAgDIO1q/"
+    "wq3hnNQgZ5UijNaiBCECEGIEIQIQYgQIUIQIgQhQhAiBCFCEIIQIQgRghAhCBGCEIQIQYgQhAh"
+    "BiBCEIEQIQoQgRAhChCAEIUIQIgQhQhAiBCEIEYIQIQgRghAhCEGIEIQIQYgQhAhBCEKEIEQIQ"
+    "oQgRAhCECIEIUIQIgQhQhAiRIgQhAhBiBCEfLc7GO6tdYHtTQAAAABJRU5ErkJggg==";
+const char *pngImageRed =
+    "data:image/png;base64,"
+    "iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAApElEQVR42u3RAQ0AAAjDMO5fNC"
+    "CDkC5z0HTVrisFCBABASIgQAQEiIAAAQJEQIAICBABASIgQAREQIAICBABASIgQAREQIAICBAB"
+    "ASIgQAREQIAICBABASIgQAREQIAICBABASIgQAREQIAICBABASIgQAREQIAICBABASIgQAREQI"
+    "AICBABASIgQAREQIAICBABASIgQAQECBAgAgJEQIAIyPcGFY7HnV2aPXoAAAAASUVORK5CYII="
+    "";
+
+int getContentIndex(const char *in)
+{
+    if (!strcmp((const char *)in, "/img1.png"))
+        return 1;
+    if (!strcmp((const char *)in, "/img2.png"))
+        return 2;
+    if (!strcmp((const char *)in, "/img3.png"))
+        return 3;
+    return 0;
+}
 
 static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
                          void *user, void *in, size_t len)
@@ -63,6 +95,9 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
         if (!lws_hdr_total_length(wsi, WSI_TOKEN_GET_URI))
             /* not a GET */
             break;
+
+        /* Tell writable callback what content to send. */
+        static_cast<int *>(user)[0] = getContentIndex((const char *)in);
 
         if (!strcmp((const char *)in, "/"))
         {
@@ -91,7 +126,7 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
             lws_callback_on_writable(wsi);
             return 0;
         }
-        else if (!strcmp((const char *)in, "/img.png"))
+        else if (static_cast<int *>(user)[0])
         {
             /* Write headers */
             if (lws_add_http_header_status(wsi, HTTP_STATUS_OK, &p, end))
@@ -102,8 +137,8 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
                     (unsigned char *)"application/base64", 18, &p, end))
                 return 1;
 
-            if (lws_add_http_header_content_length(wsi, strlen(pngImage), &p,
-                                                   end))
+            if (lws_add_http_header_content_length(wsi, strlen(pngImageBlue),
+                                                   &p, end))
                 return 1;
 
             if (lws_finalize_http_header(wsi, &p, end))
@@ -114,9 +149,6 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
                           LWS_WRITE_HTTP_HEADERS /*| LWS_WRITE_H2_STREAM_END*/);
             if (n < 0)
                 return -1;
-
-            /* Tell writable callback to send image. */
-            static_cast<int *>(user)[0] = 1;
 
             lws_callback_on_writable(wsi);
             return 0;
@@ -131,17 +163,27 @@ static int callback_http(struct lws *wsi, enum lws_callback_reasons reason,
         uint8_t *start = &buffer[LWS_PRE];
         size_t length = 0;
 
-        if (static_cast<int *>(user)[0] == 1)
+        switch (static_cast<int *>(user)[0])
         {
-            /* return png image */
-            length = strlen(pngImage);
-            memcpy(start, pngImage, length);
-        }
-        else
-        {
-            /* return html page */
+        case 0:
             length = strlen(htmlPage);
             memcpy(start, htmlPage, strlen(htmlPage));
+            break;
+        case 1:
+            length = strlen(pngImageBlue);
+            memcpy(start, pngImageBlue, length);
+            break;
+        case 2:
+            length = strlen(pngImageGreen);
+            memcpy(start, pngImageGreen, length);
+            break;
+        case 3:
+            length = strlen(pngImageRed);
+            memcpy(start, pngImageRed, length);
+            break;
+        default:
+            lwsl_err("invalid content index\n");
+            return -1;
         }
 
         /* Write body */
@@ -190,7 +232,7 @@ int main(int /*argc*/, const char ** /*argv*/)
     memset(&info, 0, sizeof info); /* otherwise uninitialized garbage */
     info.port = 7681;
     info.protocols = protocols;
-    info.max_http_header_pool = 1;
+    info.max_http_header_pool = 4;
 
     context = lws_create_context(&info);
     if (!context)
