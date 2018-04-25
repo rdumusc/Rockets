@@ -9,28 +9,28 @@ const char *htmlPage{
     <head>
         <meta charset="UTF-8">
         <title>Minimal Page</title>
-    <script>
-        function getImage(targetImg, sourceUrl)
-        {
-            var req = new XMLHttpRequest();
-            req.onreadystatechange = function() {
-                if (req.readyState == 4 && req.status == 200) {
-                    document.getElementById(targetImg).src = req.responseText;
-                }
+        <script>
+            function getImage(targetImg, sourceUrl)
+            {
+                var req = new XMLHttpRequest();
+                req.onreadystatechange = function() {
+                    if (req.readyState == 4 && req.status == 200) {
+                        document.getElementById(targetImg).src = req.responseText;
+                    }
+                };
+                req.open("GET", sourceUrl, true); // true for asynchronous
+                req.send(null);
             }
-            req.open("GET", sourceUrl, true); // true for asynchronous
-            req.send(null);
-        }
-        function getImages()
-        {
-            getImage("pngImg1", "img1.png");
-            getImage("pngImg2", "img2.png");
-            getImage("pngImg3", "img3.png");
-            getImage("pngImg4", "img1.png");
-            getImage("pngImg5", "img2.png");
-            getImage("pngImg6", "img3.png");
-        }
-    </script>
+            function getImages()
+            {
+                getImage("pngImg1", "img1.png");
+                getImage("pngImg2", "img2.png");
+                getImage("pngImg3", "img3.png");
+                getImage("pngImg4", "img1.png");
+                getImage("pngImg5", "img2.png");
+                getImage("pngImg6", "img3.png");
+            }
+        </script>
     </head>
     <body onload="getImages()">
         <h1>Minimal Page</h1>
@@ -222,7 +222,7 @@ int main(int /*argc*/, const char ** /*argv*/)
     struct lws_context_creation_info info;
     struct lws_context *context;
     int n = 0;
-    int logs = LLL_USER | LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO;
+    int logs = LLL_USER | LLL_ERR | LLL_WARN | LLL_NOTICE /*| LLL_INFO*/;
 
     signal(SIGINT, sigint_handler);
 
