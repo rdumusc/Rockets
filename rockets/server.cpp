@@ -234,6 +234,8 @@ void Server::_process(const int timeout_ms)
 static int callback_http(lws* wsi, const lws_callback_reasons reason,
                          void* /*user*/, void* in, const size_t len)
 {
+    std::cerr << to_string(reason) << std::endl;
+
     //    static size_t counter = 0;
     //    if (reason == LWS_CALLBACK_GET_THREAD_ID)
     //    {
@@ -291,12 +293,20 @@ static int callback_http(lws* wsi, const lws_callback_reasons reason,
             break;
 
         case LWS_CALLBACK_ADD_POLL_FD:
+            // std::cerr << "AAAAA" << std::endl;
+            // static std::map<lws_pollargs*, int> dummyMap;
+            // dummyMap[static_cast<lws_pollargs*>(in)] = rand();
+            // usleep(800000);
             impl->pollDescriptors.add(static_cast<lws_pollargs*>(in));
             break;
         case LWS_CALLBACK_DEL_POLL_FD:
+            // std::cerr << "BBBBB" << std::endl;
+            // usleep(100);
             impl->pollDescriptors.remove(static_cast<lws_pollargs*>(in));
             break;
         case LWS_CALLBACK_CHANGE_MODE_POLL_FD:
+            // std::cerr << "CCCCC" << std::endl;
+            // usleep(100);
             impl->pollDescriptors.update(static_cast<lws_pollargs*>(in));
             break;
         default:
@@ -304,6 +314,7 @@ static int callback_http(lws* wsi, const lws_callback_reasons reason,
         }
     }
     return 0;
+    // return lws_callback_http_dummy(wsi, reason, user, in, len);
 }
 
 static int callback_websockets(lws* wsi, const lws_callback_reasons reason,

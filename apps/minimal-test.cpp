@@ -24,11 +24,11 @@ const char *htmlPage{
             function getImages()
             {
                 getImage("pngImg1", "img1.png");
-                getImage("pngImg2", "img2.png");
-                getImage("pngImg3", "img3.png");
-                getImage("pngImg4", "img1.png");
-                getImage("pngImg5", "img2.png");
-                getImage("pngImg6", "img3.png");
+//                getImage("pngImg2", "img2.png");
+//                getImage("pngImg3", "img3.png");
+//                getImage("pngImg4", "img1.png");
+//                getImage("pngImg5", "img2.png");
+//                getImage("pngImg6", "img3.png");
             }
         </script>
     </head>
@@ -222,7 +222,7 @@ int main(int /*argc*/, const char ** /*argv*/)
     struct lws_context_creation_info info;
     struct lws_context *context;
     int n = 0;
-    int logs = LLL_USER | LLL_ERR | LLL_WARN | LLL_NOTICE /*| LLL_INFO*/;
+    int logs = LLL_USER | LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO;
 
     signal(SIGINT, sigint_handler);
 
@@ -232,7 +232,7 @@ int main(int /*argc*/, const char ** /*argv*/)
     memset(&info, 0, sizeof info); /* otherwise uninitialized garbage */
     info.port = 7681;
     info.protocols = protocols;
-    info.max_http_header_pool = 4;
+    info.max_http_header_pool = 1;
 
     context = lws_create_context(&info);
     if (!context)

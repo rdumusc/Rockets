@@ -273,131 +273,136 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(handle_all_methods, F, Fixtures, F)
     BOOST_CHECK_EQUAL(F::response, response204);
 }
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(handle_root, F, Fixtures, F)
-{
-    std::cerr << std::endl << "TEST: handle_root" << std::endl << std::endl;
+// BOOST_FIXTURE_TEST_CASE_TEMPLATE(handle_root, F, Fixtures, F)
+//{
+//    std::cerr << std::endl << "TEST: handle_root" << std::endl << std::endl;
 
-    F::server.handle(http::Method::GET, "", [](const http::Request&) {
-        return http::make_ready_response(http::Code::OK, "homepage",
-                                         "text/html");
-    });
-    F::server.handle(http::Method::PUT, "", [](const http::Request&) {
-        return http::make_ready_response(http::Code::OK);
-    });
+//    F::server.handle(http::Method::GET, "", [](const http::Request&) {
+//        return http::make_ready_response(http::Code::OK, "homepage",
+//                                         "text/html");
+//    });
+//    F::server.handle(http::Method::PUT, "", [](const http::Request&) {
+//        return http::make_ready_response(http::Code::OK);
+//    });
 
-    const http::Response expectedResponse{http::Code::OK,
-                                          "homepage",
-                                          {{http::Header::CONTENT_TYPE,
-                                            "text/html"}}};
+//    const http::Response expectedResponse{http::Code::OK,
+//                                          "homepage",
+//                                          {{http::Header::CONTENT_TYPE,
+//                                            "text/html"}}};
 
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, ""), expectedResponse);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/"), expectedResponse);
-    // Note: libwebsockets strips extra '/' so all the following are equivalent:
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "//"), expectedResponse);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "///"), expectedResponse);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, ""), expectedResponse);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/"), expectedResponse);
+//    // Note: libwebsockets strips extra '/' so all the following are
+//    equivalent:
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "//"), expectedResponse);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "///"), expectedResponse);
 
-    BOOST_CHECK_EQUAL(F::client.checkPUT(F::server, "", ""), response200);
-}
+//    BOOST_CHECK_EQUAL(F::client.checkPUT(F::server, "", ""), response200);
+//}
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(handle_root_path, F, Fixtures, F)
-{
-    std::cerr << std::endl
-              << "TEST: handle_root_path" << std::endl
-              << std::endl;
+// BOOST_FIXTURE_TEST_CASE_TEMPLATE(handle_root_path, F, Fixtures, F)
+//{
+//    std::cerr << std::endl
+//              << "TEST: handle_root_path" << std::endl
+//              << std::endl;
 
-    F::server.handle(http::Method::GET, "/", echoFunc);
-    const auto registry = json_reformat(R"({ "/": [ "GET" ] })");
-    const http::Response registryResponse{http::Code::OK, registry, JSON_TYPE};
+//    F::server.handle(http::Method::GET, "/", echoFunc);
+//    const auto registry = json_reformat(R"({ "/": [ "GET" ] })");
+//    const http::Response registryResponse{http::Code::OK, registry,
+//    JSON_TYPE};
 
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, ""), response200);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/registry"),
-                      registryResponse);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/ABC"),
-                      http::Response(http::Code::OK, "ABC"));
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/"), response200);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "//"), response200);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/abc/def/"),
-                      http::Response(http::Code::OK, "abc/def/"));
-}
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, ""), response200);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/registry"),
+//                      registryResponse);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/ABC"),
+//                      http::Response(http::Code::OK, "ABC"));
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/"), response200);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "//"), response200);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/abc/def/"),
+//                      http::Response(http::Code::OK, "abc/def/"));
+//}
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(handle_path, F, Fixtures, F)
-{
-    std::cerr << std::endl << "TEST: handle_path" << std::endl << std::endl;
+// BOOST_FIXTURE_TEST_CASE_TEMPLATE(handle_path, F, Fixtures, F)
+//{
+//    std::cerr << std::endl << "TEST: handle_path" << std::endl << std::endl;
 
-    // Register callback function for all methods
-    for (int method = 0; method < int(http::Method::ALL); ++method)
-        F::server.handle(http::Method(method), "test/", echoFunc);
+//    // Register callback function for all methods
+//    for (int method = 0; method < int(http::Method::ALL); ++method)
+//        F::server.handle(http::Method(method), "test/", echoFunc);
 
-    const http::Response expectedResponse{http::Code::OK,
-                                          "path/suffix:payload"};
-    const http::Response expectedResponseNoBody{http::Code::OK, "path/suffix"};
+//    const http::Response expectedResponse{http::Code::OK,
+//                                          "path/suffix:payload"};
+//    const http::Response expectedResponseNoBody{http::Code::OK,
+//    "path/suffix"};
 
-    for (int method = 0; method < int(http::Method::ALL); ++method)
-    {
-        using Method = http::Method;
-        const auto m = Method(method);
-        // GET and DELETE should receive => return no payload
-        if (m == Method::GET || m == Method::DELETE || m == Method::OPTIONS)
-        {
-            F::response =
-                F::client.check(F::server, "/test/path/suffix", m, "");
-            BOOST_CHECK_EQUAL(F::response, expectedResponseNoBody);
-        }
-        else
-        {
-            F::response =
-                F::client.check(F::server, "/test/path/suffix", m, "payload");
-            BOOST_CHECK_EQUAL(F::response, expectedResponse);
-        }
-    }
+//    for (int method = 0; method < int(http::Method::ALL); ++method)
+//    {
+//        using Method = http::Method;
+//        const auto m = Method(method);
+//        // GET and DELETE should receive => return no payload
+//        if (m == Method::GET || m == Method::DELETE || m == Method::OPTIONS)
+//        {
+//            F::response =
+//                F::client.check(F::server, "/test/path/suffix", m, "");
+//            BOOST_CHECK_EQUAL(F::response, expectedResponseNoBody);
+//        }
+//        else
+//        {
+//            F::response =
+//                F::client.check(F::server, "/test/path/suffix", m, "payload");
+//            BOOST_CHECK_EQUAL(F::response, expectedResponse);
+//        }
+//    }
 
-    // Test override endpoints
-    const auto get = http::Method::GET;
+//    // Test override endpoints
+//    const auto get = http::Method::GET;
 
-    F::server.handle(get, "api/object/", echoFunc);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/api/object/"),
-                      response200);
+//    F::server.handle(get, "api/object/", echoFunc);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/api/object/"),
+//                      response200);
 
-    F::server.handle(get, "api/object/properties/", echoFunc);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server,
-                                         "/api/object/properties/color"),
-                      http::Response(http::Code::OK, "color"));
+//    F::server.handle(get, "api/object/properties/", echoFunc);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server,
+//                                         "/api/object/properties/color"),
+//                      http::Response(http::Code::OK, "color"));
 
-    F::server.handle(get, "api/object/properties/color/", echoFunc);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server,
-                                         "/api/object/properties/color/rgb"),
-                      http::Response(http::Code::OK, "rgb"));
+//    F::server.handle(get, "api/object/properties/color/", echoFunc);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server,
+//                                         "/api/object/properties/color/rgb"),
+//                      http::Response(http::Code::OK, "rgb"));
 
-    // Test path is not the same as object
-    F::server.handle(get, "api/size/", echoFunc);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/api/size"), error404);
+//    // Test path is not the same as object
+//    F::server.handle(get, "api/size/", echoFunc);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/api/size"), error404);
 
-    F::server.handle(get, "api/size", echoFunc);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/api/size"), response200);
-}
+//    F::server.handle(get, "api/size", echoFunc);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/api/size"),
+//    response200);
+//}
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(urlcasesensitivity, F, Fixtures, F)
-{
-    std::cerr << std::endl
-              << "TEST: urlcasesensitivity" << std::endl
-              << std::endl;
+// BOOST_FIXTURE_TEST_CASE_TEMPLATE(urlcasesensitivity, F, Fixtures, F)
+//{
+//    std::cerr << std::endl
+//              << "TEST: urlcasesensitivity" << std::endl
+//              << std::endl;
 
-    F::server.handle(F::foo.getEndpoint(), F::foo);
-    F::server.handle(http::Method::GET, "BlA/CamelCase",
-                     [](const http::Request&) {
-                         return http::make_ready_response(http::Code::OK, "{}");
-                     });
+//    F::server.handle(F::foo.getEndpoint(), F::foo);
+//    F::server.handle(http::Method::GET, "BlA/CamelCase",
+//                     [](const http::Request&) {
+//                         return http::make_ready_response(http::Code::OK,
+//                         "{}");
+//                     });
 
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/TEST/FOO"), error404);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/test/foo"),
-                      responseJsonGet);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/TEST/FOO"), error404);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/test/foo"),
+//                      responseJsonGet);
 
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/BlA/CamelCase"),
-                      http::Response(http::Code::OK, "{}"));
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/bla/camelcase"),
-                      error404);
-    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/bla/camel-case"),
-                      error404);
-}
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/BlA/CamelCase"),
+//                      http::Response(http::Code::OK, "{}"));
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/bla/camelcase"),
+//                      error404);
+//    BOOST_CHECK_EQUAL(F::client.checkGET(F::server, "/bla/camel-case"),
+//                      error404);
+//}
 
 #endif // CLIENT_SUPPORTS_REQ_PAYLOAD

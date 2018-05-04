@@ -182,9 +182,10 @@ int Channel::write(const Response& response,
     }
 
     // Close and free connection if complete, else keep open
-    std::cerr << "status: " << lws_http_transaction_completed(wsi) << std::endl;
+    const auto status = lws_http_transaction_completed(wsi);
+    std::cerr << "status: " << status << std::endl;
     // return -1;
-    return lws_http_transaction_completed(wsi) ? -1 : 0;
+    return status ? -1 : 0;
 }
 
 #if LWS_LIBRARY_VERSION_NUMBER >= 2001000
