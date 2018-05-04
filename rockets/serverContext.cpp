@@ -1,5 +1,5 @@
-/* Copyright (c) 2017, EPFL/Blue Brain Project
- *                     Raphael.Dumusc@epfl.ch
+/* Copyright (c) 2017-2018, EPFL/Blue Brain Project
+ *                          Raphael.Dumusc@epfl.ch
  *
  * This file is part of Rockets <https://github.com/BlueBrain/Rockets>
  *
@@ -115,6 +115,9 @@ void ServerContext::fillContextInfo(const std::string& uri,
     info.max_http_header_data = 8192;
     // service threads
     info.count_threads = threadCount;
-    info.max_http_header_pool = threadCount;
+#if LWS_LIBRARY_VERSION_NUMBER <= 3000000
+    // https://github.com/warmcat/libwebsockets/issues/1249
+    info.max_http_header_pool = 1024;
+#endif
 }
 }
