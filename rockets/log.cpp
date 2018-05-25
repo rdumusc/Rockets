@@ -44,19 +44,22 @@ void handleErrorMessage(int, const char* message)
 #if LWS_LIBRARY_VERSION_NUMBER >= 3000000
     // Occurs during lws_create_vhost() if the chosen port is unavailable.
     // The returned vhost is valid(!) so the error can only be caught here.
-    if (strncmp(message, unavailablePortError, sizeof(unavailablePortError)))
+    if (strncmp(message, unavailablePortError, sizeof(unavailablePortError) - 1) == 0)
         throw unavailable_port_error(message);
 #endif
 
 #ifdef NDEBUG
     (void)message;
-#else
-    std::cerr << "rockets: lws_err: " << message << std::endl;
+//#else
+    //std::cerr << "rockets: lws_err: " << message << std::endl;
+    std::cerr << message;
 #endif
 }
 struct LogInitializer
 {
-    LogInitializer() { lws_set_log_level(LLL_ERR, handleErrorMessage); }
+    LogInitializer() { lws_set_log_level(LLL_ERR | LLL_USER | LLL_WARN | LLL_INFO | LLL_NOTICE, handleErrorMessage); }
+    //LogInitializer() { lws_set_log_level(LLL_ERR | LLL_USER | LLL_WARN | LLL_NOTICE, handleErrorMessage); }
+    //LogInitializer() { lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE,  handleErrorMessage); }
 };
 static LogInitializer silencer;
 }

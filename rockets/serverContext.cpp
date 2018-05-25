@@ -32,6 +32,10 @@
 #define LWS_WITH_LIBUV
 #endif
 
+#if LWS_LIBRARY_VERSION_NUMBER >= 3000000
+#undef LWS_WITH_LIBUV
+#endif
+
 namespace rockets
 {
 #ifdef LWS_WITH_LIBUV

@@ -22,6 +22,8 @@
 #include "response.h"
 #include "utils.h"
 
+#include <iostream>
+
 namespace rockets
 {
 namespace http
@@ -186,6 +188,7 @@ int Channel::writeResponseHeaders(const CorsResponseHeaders& corsHeaders,
 
     // Close and free connection if complete, else keep open
     return lws_http_transaction_completed(wsi) ? -1 : 0;
+    //return -1;
 }
 
 int Channel::writeResponseBody(const Response& response)
@@ -193,8 +196,16 @@ int Channel::writeResponseBody(const Response& response)
     if (!_write(response.body, LWS_WRITE_HTTP_FINAL))
         return -1;
 
+    if (lws_send_pipe_choked(wsi))
+    {
+        return -1;
+        //requestCallback();
+    }
+    std::cerr << "transaction complete: " << lws_http_transaction_completed(wsi) << std::endl;
+
     // Close and free connection if complete, else keep open
     return lws_http_transaction_completed(wsi) ? -1 : 0;
+    //return -1;
 }
 
 #if LWS_LIBRARY_VERSION_NUMBER >= 2001000
@@ -275,10 +286,17 @@ std::string Channel::_readHeader(const lws_token_indexes token) const
 
 bool Channel::_write(const std::string& message, lws_write_protocol protocol)
 {
+    if (lws_send_pipe_choked(wsi))
+        std::cerr << " pipe choked before sending: " << lws_send_pipe_choked(wsi) << std::endl;
     auto buffer = std::string(LWS_PRE, '\0');
     buffer.append(message);
     auto data = (unsigned char*)(&buffer.data()[LWS_PRE]);
-    return lws_write(wsi, data, message.size(), protocol) >= 0;
+    const auto n = lws_write(wsi, data, message.size(), protocol);
+    if (n != (int)message.size())
+        std::cerr << "Could not write all of " << n << " / " << message.size() << std::endl;
+    if (lws_send_pipe_choked(wsi))
+        std::cerr << " pipe choked after sending: " << lws_send_pipe_choked(wsi) << std::endl;
+    return n >= 0;
 }
 }
 }
